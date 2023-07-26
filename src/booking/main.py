@@ -3,6 +3,17 @@ import builtins
 from loguru import logger
 
 
+class NumberOutOfRange(Exception):
+    pass
+
+
+class InvalidCharacterAmount(Exception):
+    pass
+
+
+class InvalidResponseType(Exception):
+    pass
+
 class Terminal:
     @staticmethod
     def cprint(message):
@@ -25,31 +36,31 @@ class Web:
 
 def validate_customer_name(customer_name):
     if len(customer_name) < 10:
-        raise ValueError("Invalid response, name > 10 characters! ")
+        raise InvalidCharacterAmount
     return True
 
 
 def validate_package_description(package_description):
     if len(package_description) < 10:
-        raise ValueError("Invalid response, description > 10 characters! ")
+        raise InvalidCharacterAmount
     return True
 
 
 def validate_delivery_date(delivery_date):
     if len(delivery_date) < 8:
-        raise ValueError("Delivery date format should be yyyy-mm-dd")
+        raise InvalidCharacterAmount
     return True
 
 
 def validate_weight_kgs(weight_kgs):
     if float(weight_kgs) > 10:
-        raise ValueError("Weight of package must be < 10kgs! ")
+        raise NumberOutOfRange
     return True
 
 
 def validate_volume_cubic_meters(volume_cubic_meters):
     if float(volume_cubic_meters) > 125:
-        raise ValueError("Volume of package must be < 125 cubic meters! ")
+        raise NumberOutOfRange
     return True
 
 
@@ -57,21 +68,21 @@ def validate_dangerous_package(dangerous_package):
     if dangerous_package.lower() in ("yes", "no"):
         return True
     else:
-        raise ValueError("Valid response, only yes or no for dangerous packages! ")
+        raise InvalidResponseType
 
 
 def validate_international_package(international_package):
     if international_package.lower() in ("yes", "no"):
         return True
     else:
-        raise ValueError("Valid response, only yes or no for international packages! ")
+        raise InvalidResponseType
 
 
 def validate_urgent_package(urgent_package):
     if urgent_package.lower() in ("yes", "no"):
         return True
     else:
-        raise ValueError("Valid response, only yes or no for urgent packages! ")
+        raise InvalidResponseType
 
 
 def shippable_by_air(weight_kgs, volume_cubic_meters, dangerous_package, urgent_package, international_package):
@@ -120,28 +131,36 @@ def define_data():
     return {
         "customer_name": {"prompt": "What is your first and last name? ",
                           "field_value": None,
-                          "validator": validate_customer_name},
+                          "validator": validate_customer_name,
+                          "data_error": None},
         "package_description": {"prompt": "Please describe what your package is in a few words? ",
                                 "field_value": None,
-                                "validator": validate_package_description},
+                                "validator": validate_package_description,
+                                "data_error": None},
         "delivery_date": {"prompt": "When do you want to deliver the package by (month/date/year)? ",
                           "field_value": None,
-                          "validator": validate_delivery_date},
+                          "validator": validate_delivery_date,
+                          "data_error": None},
         "weight_kgs": {"prompt": "What is the weight of your package in kgs? ",
                        "field_value": None,
-                       "validator": validate_weight_kgs},
+                       "validator": validate_weight_kgs,
+                       "data_error": None},
         "volume_cubic_meters": {"prompt": "What is the calculated volume of your package in meters? ",
                                 "field_value": None,
-                                "validator": validate_volume_cubic_meters},
+                                "validator": validate_volume_cubic_meters,
+                                "data_error": None},
         "dangerous_package": {"prompt": "Is your package dangerous [Yes/No]? ",
                               "field_value": None,
-                              "validator": validate_dangerous_package},
+                              "validator": validate_dangerous_package,
+                              "data_error": None},
         "international_package": {"prompt": "Does your package need to be shipped internationally [Yes/No]? ",
                                   'field_value': None,
-                                  "validator": validate_international_package},
+                                  "validator": validate_international_package,
+                                  "data_error": None},
         "urgent_package": {"prompt": "Does your package need to be shipped within 3 days [Yes/No]? ",
                            "field_value": None,
-                           "validator": validate_urgent_package}
+                           "validator": validate_urgent_package,
+                           "data_error": None},
     }
 
 
@@ -203,8 +222,6 @@ def main():
         print(f"Your shipping method will be via Ground, and it will cost {ground_cost}")
     else:
         print("Sorry we don't ship your type of package")
-
-
 
 
 if __name__ == '__main__':

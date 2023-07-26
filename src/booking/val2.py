@@ -244,3 +244,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# desk-checking ... pen + paper understand variables and leverage console
