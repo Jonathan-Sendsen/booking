@@ -3,15 +3,31 @@ import builtins
 from loguru import logger
 
 
+class InvalidName(Exception):
+    pass
+
+
+class InvalidPackageDescription(Exception):
+    pass
+
+
+class InvalidDeliveryDate(Exception):
+    pass
+
+
 class NumberOutOfRange(Exception):
     pass
 
 
-class InvalidCharacterAmount(Exception):
+class InvalidResponseDangerousPackage(Exception):
     pass
 
 
-class InvalidResponseType(Exception):
+class InvalidResponseUrgentPackage(Exception):
+    pass
+
+
+class InvalidResponseInternationalPackage(Exception):
     pass
 
 class Terminal:
@@ -36,19 +52,19 @@ class Web:
 
 def validate_customer_name(customer_name):
     if len(customer_name) < 10:
-        raise InvalidCharacterAmount
+        raise InvalidName
     return True
 
 
 def validate_package_description(package_description):
     if len(package_description) < 10:
-        raise InvalidCharacterAmount
+        raise InvalidPackageDescription
     return True
 
 
 def validate_delivery_date(delivery_date):
     if len(delivery_date) < 8:
-        raise InvalidCharacterAmount
+        raise InvalidDeliveryDate
     return True
 
 
@@ -68,21 +84,21 @@ def validate_dangerous_package(dangerous_package):
     if dangerous_package.lower() in ("yes", "no"):
         return True
     else:
-        raise InvalidResponseType
+        raise InvalidResponseDangerousPackage
 
 
 def validate_international_package(international_package):
     if international_package.lower() in ("yes", "no"):
         return True
     else:
-        raise InvalidResponseType
+        raise InvalidResponseInternationalPackage
 
 
 def validate_urgent_package(urgent_package):
     if urgent_package.lower() in ("yes", "no"):
         return True
     else:
-        raise InvalidResponseType
+        raise InvalidResponseUrgentPackage
 
 
 def shippable_by_air(weight_kgs, volume_cubic_meters, dangerous_package, urgent_package, international_package):
@@ -137,7 +153,7 @@ def define_data():
                                 "field_value": None,
                                 "validator": validate_package_description,
                                 "data_error": None},
-        "delivery_date": {"prompt": "When do you want to deliver the package by (month/date/year)? ",
+        "delivery_date": {"prompt": "When do you want to deliver the package by (year/month/day)? ",
                           "field_value": None,
                           "validator": validate_delivery_date,
                           "data_error": None},
@@ -172,11 +188,26 @@ def get_user_input(data):
 
 def validate_user_inputs(data):
     for field_name, field_data in data.items():
-        while not field_data["validator"](field_data["field_value"]):
-            try:
-                field_data["field_value"] = input(field_data["error_message"])
-            except ValueError as error_message:
-                print(str(error_message))
+        try:
+            if not field_data["validator"](field_data["field_value"]):
+                field_data["data_error"] = "Invalid response"
+                get_user_input(field_data["field_value"])
+        except InvalidName:
+            field_data["data_error"] = "Customer name must be > 10 characters"
+        except InvalidPackageDescription:
+            field_data["data_error"] = "Package description must be > 10 characters"
+        except InvalidDeliveryDate:
+            field_data["data_error"] = "Delivery date must be in yyyy/mm/dd format"
+        except NumberOutOfRange:
+            field_data["data_error"] = "Weight must be < 10kg and volume < 125 cubic meters"
+        except InvalidResponseDangerousPackage:
+            field_data["data_error"] = "yes or No are valid responses for dangerous packages"
+        except InvalidResponseInternationalPackage:
+            field_data["data_error"] = "yes or no are valid responses for international packages"
+        except InvalidResponseUrgentPackage:
+            field_data["data_error"] = "yes or no are valid responses for urgent packages"
+        finally:
+            data[field_name] = field_data
     return data
 
 
