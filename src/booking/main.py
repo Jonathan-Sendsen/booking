@@ -191,7 +191,6 @@ def validate_user_inputs(data):
         try:
             if not field_data["validator"](field_data["field_value"]):
                 field_data["data_error"] = "Invalid response"
-                get_user_input(field_data["field_value"])
         except InvalidName:
             field_data["data_error"] = "Customer name must be > 10 characters"
         except InvalidPackageDescription:
@@ -233,26 +232,41 @@ input = io.cinput
 
 
 def main():
-    data = define_data() # initializing data variable from dict
-    user_data = get_user_input(data) # getting user inputted data
-    validated_data = validate_user_inputs(user_data) # getting validated user data
-    customer_name, package_description, delivery_date, weight_kgs, volume_cubic_meters, dangerous_package, \
-        urgent_package, international_package = fetch_validated_data(validated_data)
-    air_cost = air_shipping_costs(weight_kgs, volume_cubic_meters)
-    ocean_cost = ocean_shipping_costs()
-    ground_cost = ground_shipping_costs(urgent_package)
+    while True:
+        data = define_data() # initializing data variable from dict
+        user_data = get_user_input(data) # getting user inputted data
+        validated_data = validate_user_inputs(user_data) # getting validated user data
+        errors = []
+        for name, field_data in validated_data.items():
+            if field_data["data_error"] is not None:
+                errors.append(f"{name}: {field_data['data_error']}")
+        customer_name = package_description = delivery_date = weight_kgs = volume_cubic_meters = dangerous_package = urgent_package = international_package = None
+        if errors:
+            print("Please correct the following errors:")
+            for error in errors:
+                input(error)
+        else:
+            customer_name, package_description, delivery_date, weight_kgs,\
+                volume_cubic_meters, dangerous_package, urgent_package,\
+                international_package = fetch_validated_data(validated_data)
+            air_cost = air_shipping_costs(weight_kgs, volume_cubic_meters)
+            ocean_cost = ocean_shipping_costs()
+            ground_cost = ground_shipping_costs(urgent_package)
 
-    if shippable_by_air(weight_kgs, volume_cubic_meters, dangerous_package, urgent_package, international_package):
-        print(f"Thanks {customer_name}, your package is set to be delivered on {delivery_date}")
-        print(f"Your shipping method will be via Air, and it will cost {air_cost}")
-    elif shippable_by_ocean(weight_kgs, volume_cubic_meters, urgent_package, international_package):
-        print(f"Thanks {customer_name}, your package is set to be delivered on {delivery_date}")
-        print(f"Your shipping method will be via Ocean, and it will cost {ocean_cost}")
-    elif shippable_by_ground(weight_kgs, volume_cubic_meters, dangerous_package, urgent_package, international_package):
-        print(f"Thanks {customer_name}, your package is set to be delivered on {delivery_date}")
-        print(f"Your shipping method will be via Ground, and it will cost {ground_cost}")
-    else:
-        print("Sorry we don't ship your type of package")
+        if customer_name and shippable_by_air(weight_kgs, volume_cubic_meters, dangerous_package,
+                                              urgent_package, international_package):
+            print(f"Thanks {customer_name}, your package is set to be delivered on {delivery_date}")
+            print(f"Your shipping method will be via Air, and it will cost {air_cost}")
+        elif customer_name and shippable_by_ocean(weight_kgs, volume_cubic_meters, urgent_package, international_package):
+            print(f"Thanks {customer_name}, your package is set to be delivered on {delivery_date}")
+            print(f"Your shipping method will be via Ocean, and it will cost {ocean_cost}")
+        elif customer_name and shippable_by_ground(weight_kgs, volume_cubic_meters, dangerous_package, urgent_package,
+                                                   international_package):
+            print(f"Thanks {customer_name}, your package is set to be delivered on {delivery_date}")
+            print(f"Your shipping method will be via Ground, and it will cost {ground_cost}")
+        else:
+            print("Sorry we don't ship your type of package")
+        break
 
 
 if __name__ == '__main__':
