@@ -237,10 +237,9 @@ def main():
         user_data = get_user_input(data) # getting user inputted data
         validated_data = validate_user_inputs(user_data) # getting validated user data
         errors = []
-        for name, field_data in validated_data.items():
+        for field_name, field_data in validated_data.items():
             if field_data["data_error"] is not None:
-                errors.append(f"{name}: {field_data['data_error']}")
-        customer_name = package_description = delivery_date = weight_kgs = volume_cubic_meters = dangerous_package = urgent_package = international_package = None
+                errors.append(f"{field_name}: {field_data['data_error']}")
         if errors:
             print("Please correct the following errors:")
             for error in errors:
