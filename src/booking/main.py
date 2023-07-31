@@ -30,6 +30,7 @@ class InvalidResponseUrgentPackage(Exception):
 class InvalidResponseInternationalPackage(Exception):
     pass
 
+
 class Terminal:
     @staticmethod
     def cprint(message):
@@ -147,34 +148,42 @@ def define_data():
     return {
         "customer_name": {"prompt": "What is your first and last name? ",
                           "field_value": None,
+                          "is_valid": False,
                           "validator": validate_customer_name,
                           "data_error": None},
         "package_description": {"prompt": "Please describe what your package is in a few words? ",
                                 "field_value": None,
+                                "is_valid": False,
                                 "validator": validate_package_description,
                                 "data_error": None},
         "delivery_date": {"prompt": "When do you want to deliver the package by (year/month/day)? ",
                           "field_value": None,
+                          "is_valid": False,
                           "validator": validate_delivery_date,
                           "data_error": None},
         "weight_kgs": {"prompt": "What is the weight of your package in kgs? ",
                        "field_value": None,
+                       "is_valid": False,
                        "validator": validate_weight_kgs,
                        "data_error": None},
         "volume_cubic_meters": {"prompt": "What is the calculated volume of your package in meters? ",
                                 "field_value": None,
+                                "is_valid": False,
                                 "validator": validate_volume_cubic_meters,
                                 "data_error": None},
         "dangerous_package": {"prompt": "Is your package dangerous [Yes/No]? ",
                               "field_value": None,
+                              "is_valid": False,
                               "validator": validate_dangerous_package,
                               "data_error": None},
         "international_package": {"prompt": "Does your package need to be shipped internationally [Yes/No]? ",
                                   'field_value': None,
+                                  "is_valid": False,
                                   "validator": validate_international_package,
                                   "data_error": None},
         "urgent_package": {"prompt": "Does your package need to be shipped within 3 days [Yes/No]? ",
                            "field_value": None,
+                           "is_valid": False,
                            "validator": validate_urgent_package,
                            "data_error": None},
     }
@@ -182,28 +191,42 @@ def define_data():
 
 def get_user_input(data):
     for field_name, field_data in data.items():
-        field_data["field_value"] = input(field_data["prompt"])
+        if not field_data["is_valid"]:
+            if field_data["data_error"] is not None:
+                print(f"Please correct the following error => {field_data['data_error']}")
+            field_data["field_value"] = input(field_data["prompt"])
+        data[field_name] = field_data
     return data
 
 
 def validate_user_inputs(data):
     for field_name, field_data in data.items():
         try:
-            if not field_data["validator"](field_data["field_value"]):
-                field_data["data_error"] = "Invalid response"
+            if not field_data["is_valid"]:
+                print(field_data)
+                exit(1)
+                field_data["is_valid"], field_data["data_error"] = \
+                    field_data["validator"](field_data["field_value"])
         except InvalidName:
+            field_data["is_valid"] = False
             field_data["data_error"] = "Customer name must be > 10 characters"
         except InvalidPackageDescription:
+            field_data["is_valid"] = False
             field_data["data_error"] = "Package description must be > 10 characters"
         except InvalidDeliveryDate:
+            field_data["is_valid"] = False
             field_data["data_error"] = "Delivery date must be in yyyy/mm/dd format"
         except NumberOutOfRange:
+            field_data["is_valid"] = False
             field_data["data_error"] = "Weight must be < 10kg and volume < 125 cubic meters"
         except InvalidResponseDangerousPackage:
+            field_data["is_valid"] = False
             field_data["data_error"] = "yes or No are valid responses for dangerous packages"
         except InvalidResponseInternationalPackage:
+            field_data["is_valid"] = False
             field_data["data_error"] = "yes or no are valid responses for international packages"
         except InvalidResponseUrgentPackage:
+            field_data["is_valid"] = False
             field_data["data_error"] = "yes or no are valid responses for urgent packages"
         finally:
             data[field_name] = field_data
@@ -233,24 +256,15 @@ input = io.cinput
 
 def main():
     while True:
-        data = define_data() # initializing data variable from dict
-        user_data = get_user_input(data) # getting user inputted data
-        validated_data = validate_user_inputs(user_data) # getting validated user data
-        errors = []
-        for field_name, field_data in validated_data.items():
-            if field_data["data_error"] is not None:
-                errors.append(f"{field_name}: {field_data['data_error']}")
-        if errors:
-            print("Please correct the following errors:")
-            for error in errors:
-                input(error)
-        else:
-            customer_name, package_description, delivery_date, weight_kgs,\
-                volume_cubic_meters, dangerous_package, urgent_package,\
-                international_package = fetch_validated_data(validated_data)
-            air_cost = air_shipping_costs(weight_kgs, volume_cubic_meters)
-            ocean_cost = ocean_shipping_costs()
-            ground_cost = ground_shipping_costs(urgent_package)
+        data = define_data()
+        user_data = get_user_input(data)
+        validated_data = validate_user_inputs(user_data)
+        customer_name, package_description, delivery_date, weight_kgs,\
+        volume_cubic_meters, dangerous_package, urgent_package,\
+        international_package = fetch_validated_data(validated_data)
+        air_cost = air_shipping_costs(weight_kgs, volume_cubic_meters)
+        ocean_cost = ocean_shipping_costs()
+        ground_cost = ground_shipping_costs(urgent_package)
 
         if customer_name and shippable_by_air(weight_kgs, volume_cubic_meters, dangerous_package,
                                               urgent_package, international_package):
