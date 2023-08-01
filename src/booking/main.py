@@ -54,50 +54,50 @@ class Web:
 def validate_customer_name(customer_name):
     if len(customer_name) < 10:
         raise InvalidName
-    return True
+    return True, None
 
 
 def validate_package_description(package_description):
     if len(package_description) < 10:
         raise InvalidPackageDescription
-    return True
+    return True, None
 
 
 def validate_delivery_date(delivery_date):
     if len(delivery_date) < 8:
         raise InvalidDeliveryDate
-    return True
+    return True, None
 
 
 def validate_weight_kgs(weight_kgs):
     if float(weight_kgs) > 10:
         raise NumberOutOfRange
-    return True
+    return True, None
 
 
 def validate_volume_cubic_meters(volume_cubic_meters):
     if float(volume_cubic_meters) > 125:
         raise NumberOutOfRange
-    return True
+    return True, None
 
 
 def validate_dangerous_package(dangerous_package):
     if dangerous_package.lower() in ("yes", "no"):
-        return True
+        return True, None
     else:
         raise InvalidResponseDangerousPackage
 
 
 def validate_international_package(international_package):
     if international_package.lower() in ("yes", "no"):
-        return True
+        return True, None
     else:
         raise InvalidResponseInternationalPackage
 
 
 def validate_urgent_package(urgent_package):
     if urgent_package.lower() in ("yes", "no"):
-        return True
+        return True, None
     else:
         raise InvalidResponseUrgentPackage
 
@@ -136,8 +136,10 @@ def ocean_shipping_costs():
 
 
 def air_shipping_costs(weight_kgs, volume_cubic_meters):
-    air_shipment_cost_weight = weight_kgs * 10
-    air_shipment_cost_volume = volume_cubic_meters * 20
+    weight_kgs = float(weight_kgs)
+    volume_cubic_meters = float(volume_cubic_meters)
+    air_shipment_cost_weight = round(weight_kgs * 10, 2)
+    air_shipment_cost_volume = round(volume_cubic_meters * 20, 2)
     if air_shipment_cost_volume > air_shipment_cost_weight:
         return air_shipment_cost_volume
     else:
@@ -202,11 +204,7 @@ def get_user_input(data):
 def validate_user_inputs(data):
     for field_name, field_data in data.items():
         try:
-            if not field_data["is_valid"]:
-                print(field_data)
-                exit(1)
-                field_data["is_valid"], field_data["data_error"] = \
-                    field_data["validator"](field_data["field_value"])
+            field_data["is_valid"], field_data["data_error"] = field_data["validator"](field_data["field_value"])
         except InvalidName:
             field_data["is_valid"] = False
             field_data["data_error"] = "Customer name must be > 10 characters"
@@ -255,10 +253,11 @@ input = io.cinput
 
 
 def main():
-    while True:
         data = define_data()
-        user_data = get_user_input(data)
-        validated_data = validate_user_inputs(user_data)
+        while not all(field_data[1]["is_valid"] for field_data in data.items()):
+            user_data = get_user_input(data)
+            validated_data = validate_user_inputs(user_data)
+
         customer_name, package_description, delivery_date, weight_kgs,\
         volume_cubic_meters, dangerous_package, urgent_package,\
         international_package = fetch_validated_data(validated_data)
@@ -269,17 +268,16 @@ def main():
         if customer_name and shippable_by_air(weight_kgs, volume_cubic_meters, dangerous_package,
                                               urgent_package, international_package):
             print(f"Thanks {customer_name}, your package is set to be delivered on {delivery_date}")
-            print(f"Your shipping method will be via Air, and it will cost {air_cost}")
+            print(f"Your shipping method will be via Air, and it will cost ${air_cost}")
         elif customer_name and shippable_by_ocean(weight_kgs, volume_cubic_meters, urgent_package, international_package):
             print(f"Thanks {customer_name}, your package is set to be delivered on {delivery_date}")
-            print(f"Your shipping method will be via Ocean, and it will cost {ocean_cost}")
+            print(f"Your shipping method will be via Ocean, and it will cost ${ocean_cost}")
         elif customer_name and shippable_by_ground(weight_kgs, volume_cubic_meters, dangerous_package, urgent_package,
                                                    international_package):
             print(f"Thanks {customer_name}, your package is set to be delivered on {delivery_date}")
-            print(f"Your shipping method will be via Ground, and it will cost {ground_cost}")
+            print(f"Your shipping method will be via Ground, and it will cost ${ground_cost}")
         else:
             print("Sorry we don't ship your type of package")
-        break
 
 
 if __name__ == '__main__':
